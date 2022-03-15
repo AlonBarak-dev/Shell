@@ -207,6 +207,13 @@ int main(){
                 connected_to_server = false;
             }
         }
+        
+        else if (command.compare("DIR") == 0){
+            // DIR command, prints the list of files in the current directory
+            
+            
+        }
+        
 
 
     }
