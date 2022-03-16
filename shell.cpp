@@ -20,7 +20,7 @@ using namespace std;
 
 void server_run(){
     // start the server
-    int listen_port = 55002; // port number
+    int listen_port = 55003; // port number
     //start a scoket
     int sock = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -113,7 +113,7 @@ int client_run(){
     
     // set the server address and port
     server.sin_family = AF_INET;
-    int peerPort = 55002;  //port number
+    int peerPort = 55003;  //port number
     server.sin_port = htons(peerPort);
     inet_pton(AF_INET, "127.0.0.1", &server.sin_addr);
 
@@ -154,7 +154,7 @@ int main(){
             // if the user typed in EXIT, break the loop and stop the program
             if (connected_to_server)
             {
-                write(sock, "LOCAL", 5);    // close server
+                write(sock, "LOCAL", sizeof("LOCAL"));    // close server
                 thread_obj.join();      // wait for thr thread to stop
                 close(sock);    // close socket
             }
@@ -231,6 +231,25 @@ int main(){
             (void)closedir(cur_dir);    // close the directory
             sleep(1);
         }
+
+        else if (command.find("CD", 0) == 0){
+            // CD command, move to the folder that appear after the /
+            // chdir() is a system call.
+            command.erase(0,3);     // extract the name of the folder 
+            int res = chdir(command.c_str());
+            
+            // folder doesnt exists
+            if (res < 0)
+            {
+                cout << command << ": No such file/directory!" << endl;
+            }
+            else{
+                cout << "Moved to :" << command << endl;
+            }
+            
+
+        }
+        
         
 
 
