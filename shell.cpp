@@ -13,6 +13,7 @@
 #include <sstream>
 #include <arpa/inet.h>
 #include <sys/types.h>
+#include <dirent.h>
 using namespace std;
 
 // inspired from : https://www.technical-recipes.com/2014/getting-started-with-client-server-applications-in-c/
@@ -154,7 +155,7 @@ int main(){
             if (connected_to_server)
             {
                 write(sock, "LOCAL", 5);    // close server
-                sleep(1);
+                thread_obj.join();      // wait for thr thread to stop
                 close(sock);    // close socket
             }
             
@@ -169,17 +170,19 @@ int main(){
             }
             else{
                 write(sock, buff, 300);   // send the content to the server
+                sleep(1);
             }
         }
 
         else if (command.find("ECHO", 0) == 0){
             // ECHO command, print the rest of the string after the ECHO 
-            command.erase(0,4);     //erase the ECHO from the command 
+            command.erase(0,5);     //erase the ECHO from the command 
             if(!connected_to_server){
                 cout << command << endl;    // print the string
             }
             else{
                 write(sock, command_c, command.length());   // send the content to the server
+                sleep(1);
             }
         }
         
@@ -211,7 +214,22 @@ int main(){
         else if (command.compare("DIR") == 0){
             // DIR command, prints the list of files in the current directory
             
-            
+            DIR* cur_dir = opendir(".");    // open the current directory
+            struct dirent* db;
+            while((db = readdir(cur_dir)) != NULL){
+
+                if (!connected_to_server)
+                {
+                    // print the files on the standart output
+                    cout << db->d_name << endl;
+                }
+                else{
+                    // send the name of the file to the server
+                    write(sock, db->d_name ,sizeof(db->d_name));
+                }
+            }
+            (void)closedir(cur_dir);    // close the directory
+            sleep(1);
         }
         
 
@@ -219,6 +237,7 @@ int main(){
     }
 
     cout << "Thank you for using Alon Barak Shell" << endl;
+    
     
 
 
