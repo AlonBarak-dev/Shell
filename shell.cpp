@@ -14,12 +14,17 @@
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <dirent.h>
-#define PORT 55012;
+#include <signal.h>
+#include <sys/un.h>
+#include <stdio.h>
+
+#define PORT 55016;
 using namespace std;
 
 // inspired from : https://www.technical-recipes.com/2014/getting-started-with-client-server-applications-in-c/
 
 void server_run(){
+    int ret_code;
     // start the server
     int listen_port = PORT; // port number
     //start a scoket
@@ -94,7 +99,8 @@ void server_run(){
         }   
     }
     close(sock);
-    return; 
+    return;
+    
 }
 
 
@@ -142,7 +148,7 @@ int main(){
     int sock;   // TCP socket 
     bool connected_to_server = false;
     const char* command_c;
-    thread thread_obj(server_run);  // run the server as a thread
+    // thread thread_obj(server_run);  // run the server as a thread
 
     while (true)
     {
@@ -163,19 +169,20 @@ int main(){
                 // killing the process with the kill command.
                 system("kill -s SIGINT %1");
             */
-            if (!connected_to_server)
-            {
-                int sock_ex = client_run();
-                write(sock_ex, "EXIT", sizeof("EXIT"));    // close server
-                close(sock_ex);
-            }
+            // if (!connected_to_server)
+            // {
+            //     int sock_ex = client_run();
+            //     write(sock_ex, "EXIT", sizeof("EXIT"));    // close server
+            //     close(sock_ex);
+            // }
             if (connected_to_server)
             {
                 write(sock, "EXIT", sizeof("EXIT"));    // close server
                 close(sock);    // close socket
             }
-            thread_obj.join();      // wait for thr thread to stop
-            break;      // end program
+            //thread_obj.join();      // wait for thr thread to stop
+            exit(1);
+            // break;      // end program
         }
 
         else if(command.compare("getcwd") == 0){
@@ -218,12 +225,30 @@ int main(){
         
         else if (command.compare("TCP PORT") == 0){
             // TCP PORT command, open a client 
-            sock = client_run();
-            if(sock < 0){
-                cout << "Error occured" << endl;
+
+
+            if((fork()) == 0){
+                sock = client_run();
+                if(sock < 0){
+                    cout << "Error occured" << endl;
+                }
+                else{
+                    cout << "Server and Client are both ready on the localhost" << endl;
+                    connected_to_server = true;
+                }
             }
-            cout << "Server and Client are both ready on the localhost" << endl;
-            connected_to_server = true;
+            else{
+                server_run();
+            }
+
+            // sock = client_run();
+            // if(sock < 0){
+            //     cout << "Error occured" << endl;
+            // }
+            // else{
+            //     cout << "Server and Client are both ready on the localhost" << endl;
+            //     connected_to_server = true;
+            // }
         }
 
         else if (command.compare("LOCAL") == 0){
