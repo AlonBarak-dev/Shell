@@ -18,91 +18,8 @@
 #include <sys/un.h>
 #include <stdio.h>
 
-#define PORT 55016;
+#define PORT 55050;
 using namespace std;
-
-// inspired from : https://www.technical-recipes.com/2014/getting-started-with-client-server-applications-in-c/
-
-void server_run(){
-    int ret_code;
-    // start the server
-    int listen_port = PORT; // port number
-    //start a scoket
-    int sock = socket(AF_INET, SOCK_STREAM, 0);
-
-    // assert the socket is valid
-    if (sock < 0){
-        cerr << "Error in socket: " << strerror(errno) << endl;
-        return;    
-    }
-
-    // inititlize the server attributes
-    struct sockaddr_in myaddr;
-    memset(&myaddr, '0', sizeof(struct sockaddr_in)); 
-    myaddr.sin_family = AF_INET;
-    myaddr.sin_port = htons(listen_port);        // Port to listen
-    myaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    
-    // bind the socket to the address
-    int bnd = bind(sock, (struct sockaddr*) &myaddr, sizeof(myaddr));
-    if (bnd < 0)
-    {
-        std::cerr << "Error in bind: " << strerror(errno) << std::endl;
-        return;
-    }
-
-    while(true){
-        // listen for connection from client
-        int listen_res = listen(sock, 10);
-        if (listen_res < 0)
-        {
-            std::cerr << "Error listen: " << strerror(errno) << std::endl;
-            return;
-        }
-
-        // accept connection request from client
-        struct sockaddr_in peeraddr;
-        socklen_t peeraddr_len;
-        int new_sock = accept(sock, (struct sockaddr*) &peeraddr, &peeraddr_len);
-        if (new_sock < 0)
-        {
-            std::cerr << "Error connection: " << strerror(errno) << std::endl;
-            return;
-        }
-        
-        char buffer[1024];      // buffer that holds the messages from the client
-        
-        while(true){
-            
-            // clean the buffer
-            memset(&buffer, 0, strlen(buffer));
-            // receive messages from the client
-            listen_res = recv(new_sock, buffer, 1024, 0);
-            if (listen_res == 0)
-            {
-                close(new_sock);
-                break;
-            }
-            // exit and close the socket if the message is LOCAL
-            if (strcmp(buffer, "LOCAL") == 0)
-            {
-                close(new_sock);
-                break;
-            }
-            if (strcmp(buffer, "EXIT") == 0){
-                close(new_sock);
-                close(sock);
-                return;
-            }
-            // print the message 
-            cout << "Server: " << buffer << endl;   
-        }   
-    }
-    close(sock);
-    return;
-    
-}
-
 
 // inspired from : https://www.technical-recipes.com/2014/getting-started-with-client-server-applications-in-c/
 
@@ -163,35 +80,16 @@ int main(){
         if(command.compare("EXIT") == 0){
             // if the user typed in EXIT, break the loop and stop the program
 
-
-            /*
-                //USING SYSTEM():
-                // killing the process with the kill command.
-                system("kill -s SIGINT %1");
-            */
-            // if (!connected_to_server)
-            // {
-            //     int sock_ex = client_run();
-            //     write(sock_ex, "EXIT", sizeof("EXIT"));    // close server
-            //     close(sock_ex);
-            // }
             if (connected_to_server)
             {
                 write(sock, "EXIT", sizeof("EXIT"));    // close server
                 close(sock);    // close socket
             }
-            //thread_obj.join();      // wait for thr thread to stop
-            exit(1);
-            // break;      // end program
+            
+            break;      // end program
         }
 
         else if(command.compare("getcwd") == 0){
-
-            /*
-                // USING SYSTEM():
-                // getting the current working directory using the pwd command.
-                system("pwd");
-            */
 
 
             // present the files in the current directory
@@ -208,10 +106,6 @@ int main(){
         else if (command.find("ECHO", 0) == 0){
             // ECHO command, print the rest of the string after the ECHO 
             
-            /*
-                // USING SYSTEM():
-                system(command.c_str());
-            */
 
             command.erase(0,5);     //erase the ECHO from the command 
             if(!connected_to_server){
@@ -227,28 +121,14 @@ int main(){
             // TCP PORT command, open a client 
 
 
-            if((fork()) == 0){
-                sock = client_run();
-                if(sock < 0){
-                    cout << "Error occured" << endl;
-                }
-                else{
-                    cout << "Server and Client are both ready on the localhost" << endl;
-                    connected_to_server = true;
-                }
+            sock = client_run();
+            if(sock < 0){
+                cout << "Error occured" << endl;
             }
             else{
-                server_run();
+                cout << "Server and Client are both ready on the localhost" << endl;
+                connected_to_server = true;
             }
-
-            // sock = client_run();
-            // if(sock < 0){
-            //     cout << "Error occured" << endl;
-            // }
-            // else{
-            //     cout << "Server and Client are both ready on the localhost" << endl;
-            //     connected_to_server = true;
-            // }
         }
 
         else if (command.compare("LOCAL") == 0){
@@ -268,10 +148,6 @@ int main(){
         
         else if (command.compare("DIR") == 0){
 
-            /*
-                // USING SYSTEM():
-                system("dir");
-            */
             // DIR command, prints the list of files in the current directory
             
             DIR* cur_dir = opendir(".");    // open the current directory
@@ -295,14 +171,6 @@ int main(){
         else if (command.find("CD", 0) == 0){
 
 
-            /*
-                // USING SYSTEM():
-                command.erase(0,2);
-                command.insert(0, "cd");
-                system(command.c_str());
-            */
-
-
             // CD command, move to the folder that appear after the /
             // chdir() is a system call.
             command.erase(0,3);     // extract the name of the folder 
@@ -317,9 +185,10 @@ int main(){
                 cout << "Moved to :" << command << endl;
             }
         }
-        
-        
-
+        else{
+            // implement rest of the commands using the system function
+            system(command_c);
+        }
 
     }
 
