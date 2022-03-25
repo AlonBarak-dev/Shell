@@ -187,7 +187,29 @@ int main(){
         }
         else{
             // implement rest of the commands using the system function
-            system(command_c);
+            // system(command_c);
+
+            pid_t pid = fork(); // create a new process
+            if (pid < 0)
+            {
+                cout << "fork failed" << endl;
+            }
+            
+            if(pid == 0){
+                // child process
+                char * argv[2]; argv[0] = NULL;
+                // run the command
+                execve(command_c, argv, NULL);
+
+                exit(0);
+            }
+            else{
+                // parent process
+                // wait(NULL);
+            }
+
+
+
         }
 
     }
