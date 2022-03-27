@@ -17,6 +17,7 @@
 #include <signal.h>
 #include <sys/un.h>
 #include <stdio.h>
+#include <sys/wait.h>
 
 #define PORT 55050;
 using namespace std;
@@ -185,36 +186,93 @@ int main(){
                 cout << "Moved to :" << command << endl;
             }
         }
-        else{
-            // implement rest of the commands using the system function
-            // system(command_c);
-
-            pid_t pid = fork(); // create a new process
-            if (pid < 0)
+        // THIS IS THE METHOD OF QUES. 10- IDAN
+        if (command.find("COPY", 0) == 0)
+        {
+            // copy files from source folder into dest folders using fopen, fwrite, fread
+            char cmd[command.size() + 1];
+            strcpy(cmd, command_c);
+            char *token = strtok(cmd, " ");
+            // EXTRACT the src and dst paths
+            string src, dst;
+            int i = 0;
+            while (token != NULL)
             {
-                cout << "fork failed" << endl;
+                if (i == 1)
+                {
+                    src = token;
+                    cout << src << endl;
+                }
+                if(i == 2){
+                    dst = token;
+                    cout << dst << endl;
+                }
+                i++;
+                token = strtok(NULL, " ");
             }
+
+            // open the files located at src and dst and read the src file
+            FILE * src_file = fopen(src.c_str(), "rb");
+            FILE * dst_file = fopen(dst.c_str(), "ab+");
+
+            if(src_file == NULL) {cout << "Source file not exist!" << endl;continue;}    // file not exist
+            if(dst_file == NULL) {cout << "Destination file not exist!" << endl;continue;}    // file not exist
+
+            fseek(src_file,0,SEEK_END);
+            char * cur = (char*)malloc(sizeof(char)*ftell(src_file));
+            fseek(src_file,0,SEEK_SET);
+            fread(&cur, sizeof(cur), 1, src_file);
+
+            fwrite(&cur, sizeof(cur), 1, dst_file);
+
             
-            if(pid == 0){
-                // child process
-                char * argv[2]; argv[0] = NULL;
-                // run the command
-                execve(command_c, argv, NULL);
-
-                exit(0);
-            }
-            else{
-                // parent process
-                // wait(NULL);
-            }
-
-
+            // close the files 
+            fclose(src_file);
+            fclose(dst_file);
+            free(cur);
+            
 
         }
+        
+        else{
+            // implement rest of the commands using the system function
+            system(command_c);
+
+            // // fork, exec and wait implementation
+            // pid_t pid = fork(); // create a new process
+            // if (pid < 0)
+            // {
+            //     cout << "fork failed" << endl;
+            // }
+            
+            // if(pid == 0){
+            //     // child process 
+            //     char cmd[command.size() + 1];
+            //     strcpy(cmd, command_c);
+            //     char * argv[] = {cmd, NULL};
+            //     // run the command
+            //     execvp(argv[0], argv);
+            //     exit(127);
+                
+            // }
+            // else{
+            //     //parent process
+            //     int status;
+            //     while (waitpid(pid, &status, 0) == -1)
+            //     {
+            //         if (errno != EINTR)
+            //         {
+            //             status = -1;
+            //             break;
+            //         }   
+            //     }   
+            // }
+        }
+
 
     }
 
-    cout << "Thank you for using Alon Barak Shell" << endl;
+    cout << "Thank you for using Shell" << endl;
     
     
 
