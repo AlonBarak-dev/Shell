@@ -66,12 +66,13 @@ int main(){
     int sock;   // TCP socket 
     bool connected_to_server = false;
     const char* command_c;
+    int saved_fd;
     // thread thread_obj(server_run);  // run the server as a thread
 
     while (true)
     {
         // ask the user for the next command 
-        cout << "Please enter your next Command" << endl;
+        std::cout << "Please enter your next Command" << endl;
         // save the input as the next command
         getline(cin, command);
         // convert the string to a C string
@@ -95,13 +96,8 @@ int main(){
 
             // present the files in the current directory
             getcwd(buff, 256);  // return the current working directory and stores it in the buff array
-            if(!connected_to_server){
-                cout << "Curent Working Directory is:  " << buff << "\n" << endl;
-            }
-            else{
-                write(sock, buff, 300);   // send the content to the server
-                sleep(1);
-            }
+            std::cout << "Curent Working Directory is:  " << buff << "\n" << endl;
+            
         }
 
         else if (command.find("ECHO", 0) == 0){
@@ -109,13 +105,8 @@ int main(){
             
 
             command.erase(0,5);     //erase the ECHO from the command 
-            if(!connected_to_server){
-                cout << command << endl;    // print the string
-            }
-            else{
-                write(sock, command_c, command.length());   // send the content to the server
-                sleep(1);
-            }
+            std::cout << command << endl;    // print the string
+            
         }
         
         else if (command.compare("TCP PORT") == 0){
@@ -124,10 +115,13 @@ int main(){
 
             sock = client_run();
             if(sock < 0){
-                cout << "Error occured" << endl;
+                std::cout << "Error occured" << endl;
             }
             else{
-                cout << "Server and Client are both ready on the localhost" << endl;
+                std::cout << "Server and Client are both ready on the localhost" << endl;
+                saved_fd = dup(1);
+                close(1);
+                dup2(sock, 1);
                 connected_to_server = true;
             }
         }
@@ -136,12 +130,14 @@ int main(){
             // LOCAL command, the user switches back to standart output
             if (!connected_to_server){
                 // in case the user is not connected to a server
-                cout << "Already on Standart Output!" << endl;
+                std::cout << "Already on Standart Output!" << endl;
             }
             else{
                 // close the server socket
                 write(sock, "LOCAL", 5);
                 // close the user socket
+                close(1);
+                dup2(saved_fd, 1);
                 close(sock);
                 connected_to_server = false;
             }
@@ -155,15 +151,8 @@ int main(){
             struct dirent* db;
             while((db = readdir(cur_dir)) != NULL){
 
-                if (!connected_to_server)
-                {
-                    // print the files on the standart output
-                    cout << db->d_name << endl;
-                }
-                else{
-                    // send the name of the file to the server
-                    write(sock, db->d_name ,sizeof(db->d_name));
-                }
+                // print the files on the standart output
+                std::cout << db->d_name << endl;
             }
             (void)closedir(cur_dir);    // close the directory
             sleep(1);
@@ -177,17 +166,11 @@ int main(){
             command.erase(0,3);     // extract the name of the folder 
             int res = chdir(command.c_str());
             
-            // folder doesnt exists
-            if (res < 0)
-            {
-                cout << command << ": No such file/directory!" << endl;
-            }
-            else{
-                cout << "Moved to :" << command << endl;
-            }
+            
+            std::cout << command << ": No such file/directory!" << endl;
         }
         // THIS IS THE METHOD OF QUES. 10- IDAN
-        if (command.find("COPY", 0) == 0)
+        else if (command.find("COPY", 0) == 0)
         {
             // copy files from source folder into dest folders using fopen, fwrite, fread
             char cmd[command.size() + 1];
@@ -201,11 +184,11 @@ int main(){
                 if (i == 1)
                 {
                     src = token;
-                    cout << src << endl;
+                    std::cout << src << endl;
                 }
                 if(i == 2){
                     dst = token;
-                    cout << dst << endl;
+                    std::cout << dst << endl;
                 }
                 i++;
                 token = strtok(NULL, " ");
@@ -215,8 +198,8 @@ int main(){
             FILE * src_file = fopen(src.c_str(), "rb");
             FILE * dst_file = fopen(dst.c_str(), "ab+");
 
-            if(src_file == NULL) {cout << "Source file not exist!" << endl;continue;}    // file not exist
-            if(dst_file == NULL) {cout << "Destination file not exist!" << endl;continue;}    // file not exist
+            if(src_file == NULL) {std::cout << "Source file not exist!" << endl;continue;}    // file not exist
+            if(dst_file == NULL) {std::cout << "Destination file not exist!" << endl;continue;}    // file not exist
 
             fseek(src_file,0,SEEK_END);
             char * cur = (char*)malloc(sizeof(char)*ftell(src_file));
@@ -272,7 +255,7 @@ int main(){
 
     }
 
-    cout << "Thank you for using Shell" << endl;
+    std::cout << "Thank you for using Shell" << endl;
     
     
 
