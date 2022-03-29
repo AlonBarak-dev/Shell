@@ -159,13 +159,10 @@ int main(){
         }
 
         else if (command.find("CD", 0) == 0){
-
-
             // CD command, move to the folder that appear after the /
             // chdir() is a system call.
             command.erase(0,3);     // extract the name of the folder 
             int res = chdir(command.c_str());
-            
             
             std::cout << command << ": No such file/directory!" << endl;
         }
@@ -201,25 +198,62 @@ int main(){
             if(src_file == NULL) {std::cout << "Source file not exist!" << endl;continue;}    // file not exist
             if(dst_file == NULL) {std::cout << "Destination file not exist!" << endl;continue;}    // file not exist
 
+            // get the pointer position on the last bit of the file
             fseek(src_file,0,SEEK_END);
-            char * cur = (char*)malloc(sizeof(char)*ftell(src_file));
+            int end = ftell(src_file);
+
+            // get the pointer position on the first bit of the file
             fseek(src_file,0,SEEK_SET);
-            fread(&cur, sizeof(cur), 1, src_file);
-
-            fwrite(&cur, sizeof(cur), 1, dst_file);
-
+            int start = ftell(src_file);
             
+            // the difference between the first and last bit of the file is the size of the file
+            char * buffer = (char*)malloc(end - start + 1);
+            
+            // read from the src file
+            fread(buffer, sizeof(char), (size_t)sizeof(buffer)/sizeof(char) + 1, src_file);
+            
+            // write to the dst file
+            fwrite(buffer, sizeof(char), (size_t)sizeof(buffer)/sizeof(char) + 1, dst_file);
+
             // close the files 
             fclose(src_file);
             fclose(dst_file);
-            free(cur);
-            
 
+            // free the buffer
+            free(buffer);
         }
         
-        else{
+        else if (command.find("DELETE", 0) == 0) {
+            // unlink() is a system call
+            
+            char cmd[command.size() + 1];
+            strcpy(cmd, command_c);
+            // extract the command and the value as 2 tokens
+            char * token = strtok(cmd, " ");
+            
+            // remove the command token
+            token = strtok(NULL, " ");
+
+            // if the file name wasnt given inform the user
+            if (token == NULL) {
+                std::cout << "file name was left empty." << endl;
+                continue;
+            }
+            // unlink the file (aka delete it)
+            int code = unlink(token);
+            // if the deletion failed inform the user
+            if (code == -1) {
+                std::cout << "failed to delete the file" << endl;
+            }
+            else {
+                std::cout << "success!" << endl;
+            }
+        }
+
+        else {
             // implement rest of the commands using the system function
             system(command_c);
+
 
             // // fork, exec and wait implementation
             // pid_t pid = fork(); // create a new process
@@ -251,20 +285,8 @@ int main(){
             //     }   
             // }
         }
-
-
     }
 
     std::cout << "Thank you for using Shell" << endl;
-    
-    
-
-
-
-
-
-
-
-
     return 0;
 }
